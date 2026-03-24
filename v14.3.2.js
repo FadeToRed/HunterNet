@@ -354,10 +354,12 @@ var hn_post_mood = '';
 function hnToggleMoodCompose() {
   var mc = document.getElementById('hn-mood-compose');
   if (!mc) return;
-  if (mc.style['display'] === 'none' || mc.style['display'] === '') {
-    mc.style['display'] = 'flex';
-  } else {
+  var is_open = mc.getAttribute('data-open') === '1';
+  if (is_open) {
     hnClearMood();
+  } else {
+    mc.style['display'] = 'flex';
+    mc.setAttribute('data-open', '1');
   }
 }
 
@@ -372,14 +374,14 @@ function hnMoodSelect(val) {
   } else {
     if (custom) custom.style['display'] = 'none';
     hn_post_mood = val;
-    if (preview) preview.textContent = val ? ('Umore: ' + val) : '';
+    if (preview) preview.textContent = val ? ('Mood: ' + val) : '';
   }
 }
 
 function hnMoodCustomInput(val) {
   hn_post_mood = val.trim();
   var preview = document.getElementById('hn-mood-preview');
-  if (preview) preview.textContent = hn_post_mood ? ('Umore: ' + hn_post_mood) : '';
+  if (preview) preview.textContent = hn_post_mood ? ('Mood: ' + hn_post_mood) : '';
 }
 
 function hnClearMood() {
@@ -388,7 +390,7 @@ function hnClearMood() {
   var sel = document.getElementById('hn-mood-select');
   var custom = document.getElementById('hn-mood-custom');
   var preview = document.getElementById('hn-mood-preview');
-  if (mc) mc.style['display'] = 'none';
+  if (mc) { mc.style['display'] = 'none'; mc.setAttribute('data-open', '0'); }
   if (sel) sel.value = '';
   if (custom) { custom.style['display'] = 'none'; custom.value = ''; }
   if (preview) preview.textContent = '';
@@ -1055,7 +1057,7 @@ function hnRenderPost(p) {
     '<span class="hn-rank '+hnRankClass(p.authorRank)+'">'+hnEsc(p.authorRank||'')+'</span>'+
     '<span class="hn-ptime">'+hnAgo(p.createdAt)+'</span>'+editedLabel+ownerActions+'</div>'+
     '<div class="hn-ptext" id="hn-pt-'+p.id+'">'+th+'</div>'+
-    (p.mood ? '<div class="hn-post-mood">&#128151; Umore: '+hnEsc(p.mood)+'</div>' : '')+
+    (p.mood ? '<div class="hn-post-mood"><strong style="color:#5b9cf6!important;">Mood:</strong> '+hnEsc(p.mood)+'</div>' : '')+
     imgHtml+linkHtml+sharedHtml+pollHtml+
     '<div class="hn-pactions">'+
     '<button class="'+(liked?'hn-abtn hn-liked':'hn-abtn')+'" onclick="hnToggleLike(\''+p.id+'\')" onmouseenter="hnShowTooltip(event,\''+p.id+'\',\'likes\')" onmouseleave="hnHideTooltip()">'+
