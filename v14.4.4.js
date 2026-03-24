@@ -281,6 +281,12 @@ function hnFbListenNotifs(uid) {
   });
 }
 
+function hnIsAdmin() {
+  if (!hn_user) return false;
+  var prof = hnProfileById(hn_user.id);
+  return prof && prof.admin === true;
+}
+
 function hnGetPostById(pid) {
   for (var i=0;i<hn_posts.length;i++) { if(hn_posts[i].id===pid) return hn_posts[i]; }
   return null;
@@ -425,6 +431,36 @@ function hnClearLinkPreview() {
   if (url_el) url_el.textContent = '';
 }
 
+
+
+/* ── ADMIN ── */
+function hnAdminEditProfile(aid) {
+  if (!hnIsAdmin()) return;
+  var prof = hnProfileById(aid);
+  if (!prof) return;
+  // Temporarily set hn_user to target so hnOpenEditProfile works, then restore
+  var real_user = hn_user;
+  hn_user = prof;
+  hnOpenEditProfile();
+  hn_user = real_user;
+}
+
+function hnAdminDeleteAccount(aid) {
+  if (!hnIsAdmin()) return;
+  var prof = hnProfileById(aid);
+  if (!prof) return;
+  if (!confirm('ADMIN: Eliminare l\'account di @' + prof.handle + '?\nQuesta azione è irreversibile.')) return;
+  var uid = prof.id;
+  // Remove from local arrays
+  for (var di=hn_profiles.length-1;di>=0;di--) { if(hn_profiles[di].id===uid) { hn_profiles.splice(di,1); break; } }
+  for (var di=hn_creds.length-1;di>=0;di--) { if(hn_creds[di].id===uid) { hn_creds.splice(di,1); break; } }
+  // Delete from Firebase
+  hn_fb_ref('hunternet/profiles/'+uid).remove();
+  hn_fb_ref('hunternet/credentials/'+uid).remove();
+  hn_fb_ref('hunternet/notifications/'+uid).remove();
+  hnCloseModal('prof');
+  alert('Account @' + prof.handle + ' eliminato.');
+}
 
 /* ── DELETE ACCOUNT ── */
 function hnConfirmDeleteAccount() {
@@ -1154,7 +1190,8 @@ function hnRenderPost(p) {
   var cf = hn_user ? '<div class="hn-ccompose"><input type="text" placeholder="Rispondi..." id="hn-ci-'+p.id+'" oninput="hnMentionCheck(this);" onkeydown="hnMentionKey(event,this);if(event.key===\'Enter\')hnSubmitComment(\''+p.id+'\')" onblur="setTimeout(hnMentionHide,150);"><button class="hn-csend" onclick="hnSubmitComment(\''+p.id+'\')">Invia</button></div>' : '';
   var shareBtn = hn_user ? '<button class="hn-abtn" onclick="hnOpenShare(\''+p.id+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>'+(p.shares||0)+'</button>' : '';
   var isOwner = hn_user && hn_user.id === p.authorId;
-  var ownerActions = isOwner ?
+  var isAdmin = hnIsAdmin();
+  var ownerActions = (isOwner || isAdmin) ?
     '<div class="hn-owner-actions">'+
     '<button class="hn-edit-btn" onclick="hnEditPost(\''+p.id+'\')">Modifica</button>'+
     '<button class="hn-del-btn" onclick="hnDeletePost(\''+p.id+'\')">Elimina</button>'+
@@ -1205,7 +1242,7 @@ function hnRenderComments(cl, shown, pid) {
     for (var ri = 0; ri < replies.length; ri++) {
       var r = replies[ri];
       var rid = cid + '_' + ri;
-      var isReplyOwner = hn_user && hn_user.id === r.authorId;
+      var isReplyOwner = (hn_user && hn_user.id === r.authorId) || hnIsAdmin();
       var replyOwnerHtml = isReplyOwner ?
         '<div class="hn-owner-actions" style="margin-top:2px!important;">'+
         '<button class="hn-edit-btn" onclick="hnEditReply(\''+pid+'\','+ci+','+ri+')">Modifica</button>'+
@@ -1434,7 +1471,12 @@ function hnOpenProfile(aid) {
     '<div style="display:flex!important;flex-direction:column!important;gap:6px!important;margin-left:auto!important;">'+
     '<button class="hn-follow-btn" onclick="hnOpenEditProfile()">Modifica</button>'+
     '<button class="hn-follow-btn" style="border-color:#e57373!important;color:#e57373!important;font-size:11px!important;" onclick="hnConfirmDeleteAccount()">Elimina account</button>'+
-    '</div>' : '';
+    '</div>' :
+    (hnIsAdmin() && !is_me ?
+    '<div style="display:flex!important;flex-direction:column!important;gap:6px!important;margin-left:auto!important;">'+
+    '<button class="hn-follow-btn" style="font-size:11px!important;" onclick="hnAdminEditProfile(\''+aid+'\')">&#9881; Modifica</button>'+
+    '<button class="hn-follow-btn" style="border-color:#e57373!important;color:#e57373!important;font-size:11px!important;" onclick="hnAdminDeleteAccount(\''+aid+'\')">&#9881; Elimina account</button>'+
+    '</div>' : '');
   document.getElementById('hn-profcontent').innerHTML=
     '<div class="hn-profhead"><div style="position:relative!important;flex-shrink:0!important;">'+hnAvHtml(prof.color,prof.avatar||'',prof.name,'hn-profav',null)+
     (function(){ var dc='#'+(hnIsOnline(prof)?'5cb878':'5b6577'); return '<span style="position:absolute!important;bottom:2px!important;right:2px!important;width:12px!important;height:12px!important;border-radius:50%!important;background:'+dc+'!important;border:2px solid #252932!important;display:block!important;"></span>'; }())+
