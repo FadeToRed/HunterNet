@@ -284,7 +284,6 @@ function hnFbListenNotifs(uid) {
 function hnIsAdmin() {
   if (!hn_user) return false;
   var prof = hnProfileById(hn_user.id);
-  console.log('[admin] hn_user.id='+hn_user.id+' prof='+JSON.stringify(prof&&{id:prof.id,admin:prof.admin}));
   return prof && prof.admin === true;
 }
 
@@ -1480,7 +1479,7 @@ function hnOpenProfile(aid) {
     '</div>'+
     '<div class="hn-profinfo"><h2 style="cursor:pointer!important;" onclick="hnCloseModal(\'prof\');hnFilterUser(\''+aid+'\',\''+hnEsc(prof.name)+'\')">'+hnEsc(prof.name)+'</h2><div class="hn-profhandle">@'+hnEsc(prof.handle)+'</div>'+
     '<div style="margin-top:6px;"><span class="hn-rank '+hnRankClass(prof.rank)+'">'+hnEsc(prof.rank||'')+'</span></div></div>'+
-    (is_me ? edit_btn : follow_btn)+'</div>'+
+    (is_me ? edit_btn : (hnIsAdmin() ? edit_btn : follow_btn))+'</div>'+
     (prof.bio?'<p class="hn-profbio">'+hnEsc(prof.bio)+'</p>':'')+
     '<div class="hn-profstats">'+
     '<div class="hn-pstat"><span class="hn-pnum">'+up.length+'</span><span class="hn-plbl">Post</span></div>'+
