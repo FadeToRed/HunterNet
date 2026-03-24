@@ -425,6 +425,50 @@ function hnClearLinkPreview() {
   if (url_el) url_el.textContent = '';
 }
 
+
+/* ── DELETE ACCOUNT ── */
+function hnConfirmDeleteAccount() {
+  if (!hn_user) return;
+  if (!confirm('Sei sicura di voler eliminare il tuo account?\nQuesta azione è IRREVERSIBILE.\n\nVerranno eliminati: profilo, credenziali e notifiche.\nI tuoi post rimarranno visibili ma senza autore.')) return;
+  var confirm2 = prompt('Scrivi il tuo nickname (@'+hn_user.handle+') per confermare:');
+  if (!confirm2 || confirm2.trim().replace('@','') !== hn_user.handle) {
+    alert('Nickname non corrispondente. Eliminazione annullata.');
+    return;
+  }
+  hnDeleteAccount();
+}
+
+function hnDeleteAccount() {
+  if (!hn_user) return;
+  var uid = hn_user.id;
+  var handle = hn_user.handle;
+  var btn = document.querySelector('#hn-profcontent button[onclick*="hnConfirmDeleteAccount"]');
+  if (btn) { btn.disabled = true; btn.textContent = '...'; }
+
+  var done = 0;
+  var total = 3;
+  function onDone() {
+    done++;
+    if (done < total) return;
+    // Log out and clean up session
+    sessionStorage.removeItem('hn_user');
+    hn_user = null;
+    hn_notifs = [];
+    hn_deleted_notif_ids = {};
+    hn_read_notif_ids = {};
+    hnCloseModal('prof');
+    hnSetLoggedOut();
+    alert('Account eliminato. Ciao '+handle+'!');
+  }
+
+  // Delete profile
+  hn_fb_ref('hunternet/profiles/'+uid).remove().then(onDone).catch(onDone);
+  // Delete credentials
+  hn_fb_ref('hunternet/credentials/'+uid).remove().then(onDone).catch(onDone);
+  // Delete notifications
+  hn_fb_ref('hunternet/notifications/'+uid).remove().then(onDone).catch(onDone);
+}
+
 /* ── MOOD ── */
 var hn_post_mood = '';
 
@@ -1378,7 +1422,10 @@ function hnOpenProfile(aid) {
       '<div style="margin:0!important;"><div class="hn-fitem-name">'+hnEsc(fr.name)+'</div><div class="hn-fitem-handle">@'+hnEsc(fr.handle)+'</div></div></div>';
   }
   var edit_btn = is_me ?
-    '<button class="hn-follow-btn" style="margin-left:auto!important;" onclick="hnOpenEditProfile()">Modifica</button>' : '';
+    '<div style="display:flex!important;gap:6px!important;margin-left:auto!important;">'+
+    '<button class="hn-follow-btn" onclick="hnOpenEditProfile()">Modifica</button>'+
+    '<button class="hn-follow-btn" style="border-color:#e57373!important;color:#e57373!important;" onclick="hnConfirmDeleteAccount()">Elimina account</button>'+
+    '</div>' : '';
   document.getElementById('hn-profcontent').innerHTML=
     '<div class="hn-profhead"><div style="position:relative!important;flex-shrink:0!important;">'+hnAvHtml(prof.color,prof.avatar||'',prof.name,'hn-profav',null)+
     (function(){ var dc='#'+(hnIsOnline(prof)?'5cb878':'5b6577'); return '<span style="position:absolute!important;bottom:2px!important;right:2px!important;width:12px!important;height:12px!important;border-radius:50%!important;background:'+dc+'!important;border:2px solid #252932!important;display:block!important;"></span>'; }())+
