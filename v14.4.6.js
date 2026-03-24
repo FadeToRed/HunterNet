@@ -284,6 +284,7 @@ function hnFbListenNotifs(uid) {
 function hnIsAdmin() {
   if (!hn_user) return false;
   var prof = hnProfileById(hn_user.id);
+  console.log('[admin] hn_user.id='+hn_user.id+' prof='+JSON.stringify(prof&&{id:prof.id,admin:prof.admin}));
   return prof && prof.admin === true;
 }
 
