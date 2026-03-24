@@ -451,14 +451,18 @@ function hnDeleteAccount() {
     done++;
     if (done < total) return;
     // Log out and clean up session
+    var bye_handle = handle;
     sessionStorage.removeItem('hn_user');
     hn_user = null;
     hn_notifs = [];
     hn_deleted_notif_ids = {};
     hn_read_notif_ids = {};
+    // Remove from local arrays
+    for (var di=hn_profiles.length-1;di>=0;di--) { if(hn_profiles[di].id===uid) { hn_profiles.splice(di,1); break; } }
+    for (var di=hn_creds.length-1;di>=0;di--) { if(hn_creds[di].id===uid) { hn_creds.splice(di,1); break; } }
     hnCloseModal('prof');
     hnSetLoggedOut();
-    alert('Account eliminato. Ciao '+handle+'!');
+    alert('Account eliminato. Ciao ' + bye_handle + '!');
   }
 
   // Delete profile
@@ -1422,9 +1426,9 @@ function hnOpenProfile(aid) {
       '<div style="margin:0!important;"><div class="hn-fitem-name">'+hnEsc(fr.name)+'</div><div class="hn-fitem-handle">@'+hnEsc(fr.handle)+'</div></div></div>';
   }
   var edit_btn = is_me ?
-    '<div style="display:flex!important;gap:6px!important;margin-left:auto!important;">'+
+    '<div style="display:flex!important;flex-direction:column!important;gap:6px!important;margin-left:auto!important;">'+
     '<button class="hn-follow-btn" onclick="hnOpenEditProfile()">Modifica</button>'+
-    '<button class="hn-follow-btn" style="border-color:#e57373!important;color:#e57373!important;" onclick="hnConfirmDeleteAccount()">Elimina account</button>'+
+    '<button class="hn-follow-btn" style="border-color:#e57373!important;color:#e57373!important;font-size:11px!important;" onclick="hnConfirmDeleteAccount()">Elimina account</button>'+
     '</div>' : '';
   document.getElementById('hn-profcontent').innerHTML=
     '<div class="hn-profhead"><div style="position:relative!important;flex-shrink:0!important;">'+hnAvHtml(prof.color,prof.avatar||'',prof.name,'hn-profav',null)+
