@@ -393,6 +393,7 @@ function hnLinkPreviewFetch(url) {
         }
       }
       if (url_el) url_el.textContent = url;
+      hn_link_image = fetched_img || '';
       if (fetched_img && img_el) {
         img_el.src = fetched_img;
         img_el.style['display'] = 'block';
@@ -930,10 +931,10 @@ function hnSubmitPost() {
   var post = { id:String(Date.now()), authorId:hn_user.id, authorName:hn_user.name,
     authorHandle:hn_user.handle, authorColor:hn_user.color, authorAvatar:hn_user.avatar||'',
     authorRank:hn_user.rank, text:text, imgUrl:imgUrl||'',
-    likes:[], dislikes:[], comments:[], poll:poll_data, linkUrl:link_url||'', linkTitle:link_title||'', mood:hn_post_mood||'', createdAt:new Date().toISOString() };
+    likes:[], dislikes:[], comments:[], poll:poll_data, linkUrl:link_url||'', linkTitle:link_title||'', linkImage:hn_link_image||'', mood:hn_post_mood||'', createdAt:new Date().toISOString() };
   hn_posts.unshift(post);
   hnSavePost_fb(post,
-    function(){ ta.value=''; hnClearImg(); hnUpdateChar(); hnClearMood(); btn.disabled=false; btn.textContent='Pubblica'; hnNotifMentions(text, post.id, text); hnNotifGroupTags(text, post.id, text); hn_poll_options=[]; hn_poll_deadline_val=''; var pc=document.getElementById('hn-poll-compose'); if(pc)pc.style['display']='none'; hn_link_url=''; hn_link_title=''; var lr=document.getElementById('hn-linkurl-row'); if(lr)lr.style['display']='none'; var li2=document.getElementById('hn-linkurl'); if(li2)li2.value=''; var lt2=document.getElementById('hn-linktitle'); if(lt2)lt2.value=''; },
+    function(){ ta.value=''; hnClearImg(); hnUpdateChar(); hnClearMood(); btn.disabled=false; btn.textContent='Pubblica'; hnNotifMentions(text, post.id, text); hnNotifGroupTags(text, post.id, text); hn_poll_options=[]; hn_poll_deadline_val=''; var pc=document.getElementById('hn-poll-compose'); if(pc)pc.style['display']='none'; hn_link_url=''; hn_link_title=''; hn_link_image=''; var lr=document.getElementById('hn-linkurl-row'); if(lr)lr.style['display']='none'; var li2=document.getElementById('hn-linkurl'); if(li2)li2.value=''; var lt2=document.getElementById('hn-linktitle'); if(lt2)lt2.value=''; },
     function(){ hn_posts.shift(); alert('Errore durante la pubblicazione.'); btn.disabled=false; btn.textContent='Pubblica'; }
   );
 }
@@ -1069,11 +1070,13 @@ function hnRenderPost(p) {
   }
   var linkHtml = '';
   if (p.linkUrl) {
-    linkHtml = '<a href="'+hnEsc(p.linkUrl)+'" target="_blank" rel="noopener" style="display:block!important;text-decoration:none!important;border:1px solid #313846!important;border-radius:8px!important;padding:10px 12px!important;margin-bottom:8px!important;background:#1e2128!important;transition:background 0.1s!important;" onmouseover="this.style.background=\'#252932\'" onmouseout="this.style.background=\'#1e2128\'">'+
+    linkHtml = '<a href="'+hnEsc(p.linkUrl)+'" target="_blank" rel="noopener" style="display:block!important;text-decoration:none!important;border:1px solid #313846!important;border-radius:8px!important;overflow:hidden!important;margin-bottom:8px!important;background:#1e2128!important;transition:background 0.1s!important;" onmouseover="this.style.background=\'#252932\'" onmouseout="this.style.background=\'#1e2128\'">'+
+      (p.linkImage ? '<img src="'+hnEsc(p.linkImage)+'" style="width:100%!important;max-height:160px!important;object-fit:cover!important;display:block!important;" onerror="this.style.display=\'none\'">' : '')+
+      '<div style="padding:10px 12px!important;">'+
       '<div style="font-size:10px!important;color:#5b6577!important;margin-bottom:4px!important;text-transform:uppercase!important;letter-spacing:0.5px!important;">&#128279; Link</div>'+
       (p.linkTitle ? '<div style="font-size:13px!important;font-weight:500!important;color:#e2e8f0!important;margin-bottom:2px!important;">'+hnEsc(p.linkTitle)+'</div>' : '')+
       '<div style="font-size:11px!important;color:#5b9cf6!important;word-break:break-all!important;">'+hnEsc(p.linkUrl)+'</div>'+
-      '</a>';
+      '</div></a>';
   }
   var pollHtml = '';
   if (p.poll) {
@@ -2030,6 +2033,7 @@ function hnEscAttr(s) {
 var hn_share_pid = null;
 var hn_link_url = '';
 var hn_link_title = '';
+var hn_link_image = '';
 var hn_poll_options = [];
 var hn_poll_deadline_val = '';
 
