@@ -1469,7 +1469,7 @@ function hnOpenProfile(aid) {
     '<button class="hn-follow-btn" style="border-color:#e57373!important;color:#e57373!important;font-size:11px!important;" onclick="hnConfirmDeleteAccount()">Elimina account</button>'+
     '</div>' :
     (hnIsAdmin() && !is_me ?
-    '<div style="display:flex!important;flex-direction:column!important;gap:6px!important;margin-left:auto!important;">'+
+    '<div style="display:flex!important;flex-direction:column!important;gap:4px!important;">'+
     '<button class="hn-follow-btn" style="font-size:11px!important;" onclick="hnAdminEditProfile(\''+aid+'\')">&#9881; Modifica</button>'+
     '<button class="hn-follow-btn" style="border-color:#e57373!important;color:#e57373!important;font-size:11px!important;" onclick="hnAdminDeleteAccount(\''+aid+'\')">&#9881; Elimina account</button>'+
     '</div>' : '');
@@ -1479,7 +1479,7 @@ function hnOpenProfile(aid) {
     '</div>'+
     '<div class="hn-profinfo"><h2 style="cursor:pointer!important;" onclick="hnCloseModal(\'prof\');hnFilterUser(\''+aid+'\',\''+hnEsc(prof.name)+'\')">'+hnEsc(prof.name)+'</h2><div class="hn-profhandle">@'+hnEsc(prof.handle)+'</div>'+
     '<div style="margin-top:6px;"><span class="hn-rank '+hnRankClass(prof.rank)+'">'+hnEsc(prof.rank||'')+'</span></div></div>'+
-    (is_me ? edit_btn : (hnIsAdmin() ? edit_btn : follow_btn))+'</div>'+
+    (is_me ? edit_btn : (hnIsAdmin() ? '<div style="display:flex!important;flex-direction:column!important;gap:6px!important;margin-left:auto!important;">'+follow_btn+edit_btn+'</div>' : follow_btn))+'</div>'+
     (prof.bio?'<p class="hn-profbio">'+hnEsc(prof.bio)+'</p>':'')+
     '<div class="hn-profstats">'+
     '<div class="hn-pstat"><span class="hn-pnum">'+up.length+'</span><span class="hn-plbl">Post</span></div>'+
