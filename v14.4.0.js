@@ -791,7 +791,7 @@ function hnDoRegister() {
   }
   function onErr() { errored=true; onSaved(); }
 
-  hnSaveCred_fb({id:uid, handle:handle, password:pass}, onSaved, onErr);
+  hnSaveCred_fb({id:id, handle:handle, password:pass}, onSaved, onErr);
   hnSaveProfile_fb(newProf, onSaved, onErr);
 }
 
