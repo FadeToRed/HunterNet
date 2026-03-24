@@ -375,16 +375,14 @@ function hnLinkPreviewFetch(url) {
   if (body_el) body_el.style['display'] = 'none';
   if (img_el) img_el.style['display'] = 'none';
 
-  // Use jsonlink.io — dedicated link preview API
-  var api = 'https://jsonlink.io/api/extract?url=' + encodeURIComponent(url);
-  console.log('[preview] fetching:', api);
+  // Use Cloudflare Worker proxy
+  var api = 'https://hunternet-proxy.a-f-avvento.workers.dev/?url=' + encodeURIComponent(url);
   fetch(api)
-    .then(function(r) { console.log('[preview] status:', r.status); return r.json(); })
+    .then(function(r) { return r.json(); })
     .then(function(data) {
-      console.log('[preview] data:', JSON.stringify(data));
       if (spinner) spinner.style['display'] = 'none';
       var fetched_title = data.title || '';
-      var fetched_img = (data.images && data.images.length > 0) ? data.images[0] : '';
+      var fetched_img = data.image || '';
       if (body_el) body_el.style['display'] = 'block';
       if (title_el) {
         title_el.textContent = fetched_title;
@@ -400,8 +398,7 @@ function hnLinkPreviewFetch(url) {
         img_el.style['display'] = 'block';
       }
     })
-    .catch(function(err) {
-      console.log('[preview] error:', err);
+    .catch(function() {
       if (spinner) spinner.style['display'] = 'none';
       if (body_el) body_el.style['display'] = 'block';
       if (title_el) title_el.textContent = '';
