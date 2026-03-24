@@ -364,35 +364,18 @@ function hnToggleMoodCompose() {
 }
 
 function hnMoodSelect(val) {
-  var custom = document.getElementById('hn-mood-custom');
   var preview = document.getElementById('hn-mood-preview');
-  if (val === 'custom') {
-    custom.style['display'] = 'block';
-    custom.focus();
-    hn_post_mood = '';
-    if (preview) preview.textContent = '';
-  } else {
-    if (custom) custom.style['display'] = 'none';
-    hn_post_mood = val;
-    if (preview) preview.textContent = val ? ('Mood: ' + val) : '';
-  }
-}
-
-function hnMoodCustomInput(val) {
-  hn_post_mood = val.trim();
-  var preview = document.getElementById('hn-mood-preview');
-  if (preview) preview.textContent = hn_post_mood ? ('Mood: ' + hn_post_mood) : '';
+  hn_post_mood = val;
+  if (preview) preview.textContent = val ? ('Mood: ' + val) : '';
 }
 
 function hnClearMood() {
   hn_post_mood = '';
   var mc = document.getElementById('hn-mood-compose');
   var sel = document.getElementById('hn-mood-select');
-  var custom = document.getElementById('hn-mood-custom');
   var preview = document.getElementById('hn-mood-preview');
   if (mc) { mc.style['display'] = 'none'; mc.setAttribute('data-open', '0'); }
   if (sel) sel.value = '';
-  if (custom) { custom.style['display'] = 'none'; custom.value = ''; }
   if (preview) preview.textContent = '';
 }
 
