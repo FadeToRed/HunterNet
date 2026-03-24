@@ -348,6 +348,96 @@ function hnMarkNotifReadFb(to_id, nid) {
 
 
 
+
+/* ── LINK PREVIEW ── */
+var hn_link_preview_timer = null;
+
+function hnLinkPreviewDebounce(url) {
+  if (hn_link_preview_timer) clearTimeout(hn_link_preview_timer);
+  var prev = document.getElementById('hn-link-preview');
+  if (!url || url.indexOf('http') !== 0) {
+    if (prev) prev.classList.remove('hn-vis');
+    return;
+  }
+  hn_link_preview_timer = setTimeout(function() { hnLinkPreviewFetch(url); }, 800);
+}
+
+function hnLinkPreviewFetch(url) {
+  var prev = document.getElementById('hn-link-preview');
+  var spinner = document.getElementById('hn-link-preview-spinner');
+  var img_el = document.getElementById('hn-link-preview-img');
+  var body_el = document.getElementById('hn-link-preview-body');
+  var title_el = document.getElementById('hn-link-preview-title');
+  var url_el = document.getElementById('hn-link-preview-url');
+  if (!prev) return;
+  prev.classList.add('hn-vis');
+  if (spinner) spinner.style['display'] = 'block';
+  if (body_el) body_el.style['display'] = 'none';
+  if (img_el) img_el.style['display'] = 'none';
+
+  // Use allorigins.win as CORS proxy to fetch page meta
+  var proxy = 'https://api.allorigins.win/get?url=' + encodeURIComponent(url);
+  fetch(proxy)
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var html_str = data.contents || '';
+      var title_match = html_str.match(/<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i)
+        || html_str.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:title["']/i)
+        || html_str.match(/<title[^>]*>([^<]+)<\/title>/i);
+      var img_match = html_str.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i)
+        || html_str.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i);
+      var fetched_title = title_match ? title_match[1].trim() : '';
+      var fetched_img = img_match ? img_match[1].trim() : '';
+      if (spinner) spinner.style['display'] = 'none';
+      if (fetched_title || fetched_img) {
+        if (body_el) body_el.style['display'] = 'block';
+        if (title_el) {
+          title_el.textContent = fetched_title;
+          // Auto-fill title input if empty
+          var title_inp = document.getElementById('hn-linktitle');
+          if (title_inp && !title_inp.value && fetched_title) {
+            title_inp.value = fetched_title;
+            hn_link_title = fetched_title;
+          }
+        }
+        if (url_el) url_el.textContent = url;
+        if (fetched_img && img_el) {
+          img_el.src = fetched_img;
+          img_el.style['display'] = 'block';
+        }
+      } else {
+        // No OG data found — show just the URL
+        if (body_el) body_el.style['display'] = 'block';
+        if (title_el) title_el.textContent = '';
+        if (url_el) url_el.textContent = url;
+      }
+    })
+    .catch(function() {
+      if (spinner) spinner.style['display'] = 'none';
+      if (body_el) body_el.style['display'] = 'block';
+      if (title_el) title_el.textContent = '';
+      if (url_el) url_el.textContent = url;
+    });
+}
+
+function hnLinkPreviewSetTitle(val) {
+  var title_el = document.getElementById('hn-link-preview-title');
+  if (title_el) title_el.textContent = val;
+}
+
+function hnClearLinkPreview() {
+  var prev = document.getElementById('hn-link-preview');
+  var img_el = document.getElementById('hn-link-preview-img');
+  var body_el = document.getElementById('hn-link-preview-body');
+  var title_el = document.getElementById('hn-link-preview-title');
+  var url_el = document.getElementById('hn-link-preview-url');
+  if (prev) prev.classList.remove('hn-vis');
+  if (img_el) { img_el.src = ''; img_el.style['display'] = 'none'; }
+  if (body_el) body_el.style['display'] = 'none';
+  if (title_el) title_el.textContent = '';
+  if (url_el) url_el.textContent = '';
+}
+
 /* ── MOOD ── */
 var hn_post_mood = '';
 
@@ -478,11 +568,17 @@ function hnEsc(s) {
   return s.split('\u0026').join(amp).split('<').join(lt).split('>').join(gt).split('"').join(qt);
 }
 function hnAgo(iso) {
-  var diff = Date.now() - new Date(iso).getTime();
+  var d = new Date(iso);
+  var diff = Date.now() - d.getTime();
   var m = Math.floor(diff/60000);
-  if (m < 1) return 'adesso'; if (m < 60) return m+'m';
-  var h = Math.floor(m/60); if (h < 24) return h+'h';
-  return Math.floor(h/24)+'g';
+  var rel;
+  if (m < 1) rel = 'adesso';
+  else if (m < 60) rel = m+'m';
+  else if (m < 1440) rel = Math.floor(m/60)+'h';
+  else rel = Math.floor(m/1440)+'g';
+  var pad = function(n){ return n < 10 ? '0'+n : ''+n; };
+  var exact = pad(d.getDate())+'/'+pad(d.getMonth()+1)+'/'+d.getFullYear()+' '+pad(d.getHours())+':'+pad(d.getMinutes());
+  return '<span title="'+exact+'" style="cursor:default!important;">'+rel+'</span>';
 }
 function hnRankClass(rank) {
   if (!rank) return 'hn-rdef';
