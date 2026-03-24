@@ -452,16 +452,14 @@ function hnDeleteAccount() {
     if (done < total) return;
     // Log out and clean up session
     var bye_handle = handle;
-    sessionStorage.removeItem('hn_user');
-    hn_user = null;
-    hn_notifs = [];
-    hn_deleted_notif_ids = {};
-    hn_read_notif_ids = {};
     // Remove from local arrays
     for (var di=hn_profiles.length-1;di>=0;di--) { if(hn_profiles[di].id===uid) { hn_profiles.splice(di,1); break; } }
     for (var di=hn_creds.length-1;di>=0;di--) { if(hn_creds[di].id===uid) { hn_creds.splice(di,1); break; } }
+    hn_notifs = [];
+    hn_deleted_notif_ids = {};
+    hn_read_notif_ids = {};
     hnCloseModal('prof');
-    hnSetLoggedOut();
+    hnLogout();
     alert('Account eliminato. Ciao ' + bye_handle + '!');
   }
 
@@ -1089,6 +1087,7 @@ function hnRenderPost(p) {
   if (hn_user&&p.likes) { for (var i=0;i<p.likes.length;i++) { if(p.likes[i]===hn_user.id){liked=true;break;} } }
   if (hn_user&&p.dislikes) { for (var i=0;i<p.dislikes.length;i++) { if(p.dislikes[i]===hn_user.id){disliked=true;break;} } }
   var author_prof = hnProfileById(p.authorId);
+  var is_deleted_user = !author_prof && p.authorId;
   var th = hnFormatText(p.text);
   th = th.split('\n').join('<br>');
   var imgHtml = '';
@@ -1165,12 +1164,17 @@ function hnRenderPost(p) {
     var dot_color = hnIsOnline(author_prof) ? '#5cb878' : '#5b6577';
     online_dot_html = '<span style="position:absolute!important;bottom:0!important;right:0!important;width:13px!important;height:13px!important;border-radius:50%!important;background:'+dot_color+'!important;border:2px solid #252932!important;display:block!important;"></span>';
   }
+  var post_avatar = is_deleted_user ?
+    '<div class="hn-av" style="background:#5b6577!important;flex-shrink:0!important;">?</div>' :
+    hnAvHtml(p.authorColor,p.authorAvatar||'',p.authorName,'hn-av',null);
   return '<div class="hn-post" id="hn-p-'+p.id+'"><div class="hn-phead">'+
-    '<div style="position:relative!important;flex-shrink:0!important;">'+hnAvHtml(p.authorColor,p.authorAvatar||'',p.authorName,'hn-av',null)+online_dot_html+'</div>'+
+    '<div style="position:relative!important;flex-shrink:0!important;">'+post_avatar+online_dot_html+'</div>'+
     '<div class="hn-pbody"><div class="hn-pmeta">'+
-    '<span class="hn-pname" onclick="hnOpenProfile(\''+p.authorId+'\')">'+hnEsc(p.authorName)+'</span>'+hnVerifiedBadge(author_prof)+
-    '<span class="hn-phandle">@'+hnEsc(p.authorHandle)+'</span>'+
-    '<span class="hn-rank '+hnRankClass(p.authorRank)+'">'+hnEsc(p.authorRank||'')+'</span>'+
+    (is_deleted_user ?
+      '<span class="hn-pname" style="color:#5b6577!important;cursor:default!important;">Utente Cancellato</span>' :
+      '<span class="hn-pname" onclick="hnOpenProfile(\''+p.authorId+'\')">'+hnEsc(p.authorName)+'</span>'+hnVerifiedBadge(author_prof)+
+      '<span class="hn-phandle">@'+hnEsc(p.authorHandle)+'</span>'+
+      '<span class="hn-rank '+hnRankClass(p.authorRank)+'">'+hnEsc(p.authorRank||'')+'</span>')+
     '<span class="hn-ptime">'+hnAgo(p.createdAt)+'</span>'+editedLabel+ownerActions+'</div>'+
     '<div class="hn-ptext" id="hn-pt-'+p.id+'">'+th+'</div>'+
     (p.mood ? '<div class="hn-post-mood"><strong style="color:#5b9cf6!important;">Mood:</strong> '+hnEsc(p.mood)+'</div>' : '')+
