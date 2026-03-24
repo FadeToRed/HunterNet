@@ -438,11 +438,7 @@ function hnAdminEditProfile(aid) {
   if (!hnIsAdmin()) return;
   var prof = hnProfileById(aid);
   if (!prof) return;
-  // Temporarily set hn_user to target so hnOpenEditProfile works, then restore
-  var real_user = hn_user;
-  hn_user = prof;
-  hnOpenEditProfile();
-  hn_user = real_user;
+  hnOpenEditProfileFor(aid);
 }
 
 function hnAdminDeleteAccount(aid) {
@@ -1253,7 +1249,7 @@ function hnRenderComments(cl, shown, pid) {
         '<div class="hn-rbody"><div class="hn-rmeta"><span class="hn-rname" style="cursor:pointer!important;" onclick="hnOpenProfileByHandle(\''+hnEsc(r.authorHandle)+'\')">'+(r.authorHandle?hnEsc(r.authorName)+hnVerifiedBadge(hnProfileById(r.authorId)):hnEsc(r.authorName))+'</span><span class="hn-rtime">'+hnAgo(r.createdAt)+'</span>'+replyEditedLabel+'</div>'+
         '<div class="hn-rtext" id="hn-rt-'+rid+'">'+hnMentionify(hnEsc(r.text))+'</div>'+replyOwnerHtml+'</div></div>';
     }
-    var isCommentOwner = hn_user && hn_user.id === c.authorId;
+    var isCommentOwner = (hn_user && hn_user.id === c.authorId) || hnIsAdmin();
     var commentOwnerHtml = isCommentOwner ?
       '<button class="hn-edit-btn" onclick="hnEditComment(\''+pid+'\','+ci+')">Modifica</button>'+
       '<button class="hn-del-btn" onclick="hnDeleteComment(\''+pid+'\','+ci+')">Elimina</button>' : '';
@@ -1523,8 +1519,12 @@ function hnProfTab(tab, el) {
 
 function hnOpenEditProfile() {
   if (!hn_user) return;
+  hnOpenEditProfileFor(hn_user.id);
+}
+
+function hnOpenEditProfileFor(target_id) {
   var prof = null;
-  for (var i = 0; i < hn_profiles.length; i++) { if (hn_profiles[i].id === hn_user.id) { prof = hn_profiles[i]; break; } }
+  for (var i = 0; i < hn_profiles.length; i++) { if (hn_profiles[i].id === target_id) { prof = hn_profiles[i]; break; } }
   if (!prof) return;
   var ranks = ['★★★ Hunter','★★ Hunter','★ Hunter','Hunter','Apprendista','Lottatore Celeste','Civile'];
   var rank_opts = '';
@@ -1566,8 +1566,8 @@ function hnOpenEditProfile() {
     '</div>'+
     '<div class="hn-errmsg" id="hn-edit-err"></div>'+
     '<div class="hn-mactions">'+
-      '<button class="hn-gbtn" onclick="hnOpenProfile(\''+hn_user.id+'\')">Annulla</button>'+
-      '<button class="hn-dbtn" onclick="hnSaveProfile()">Salva</button>'+
+      '<button class="hn-gbtn" onclick="hnOpenProfile(\''+prof.id+'\')">Annulla</button>'+
+      '<button class="hn-dbtn" onclick="hnSaveProfileFor(\''+prof.id+'\')">Salva</button>'+
     '</div>';
   hn_edit_color = prof.color;
 }
@@ -1597,6 +1597,11 @@ function hnEditPreviewAvatar() {
 }
 
 function hnSaveProfile() {
+  if (!hn_user) return;
+  hnSaveProfileFor(hn_user.id);
+}
+
+function hnSaveProfileFor(target_id) {
   var name   = document.getElementById('hn-edit-name').value.trim();
   var handle = document.getElementById('hn-edit-handle').value.trim().replace('@','');
   var rank   = document.getElementById('hn-edit-rank').value;
@@ -1615,16 +1620,16 @@ function hnSaveProfile() {
   if (!hn_ok) return hnShowErr('hn-edit-err','Nickname: solo lettere, numeri e _.');
 
   for (var i = 0; i < hn_creds.length; i++) {
-    if (hn_creds[i].handle.toLowerCase() === handle.toLowerCase() && hn_creds[i].id !== hn_user.id)
+    if (hn_creds[i].handle.toLowerCase() === handle.toLowerCase() && hn_creds[i].id !== target_id)
       return hnShowErr('hn-edit-err','Nickname già in uso.');
   }
 
   var prof_idx = -1;
-  for (var j = 0; j < hn_profiles.length; j++) { if (hn_profiles[j].id === hn_user.id) { prof_idx = j; break; } }
+  for (var j = 0; j < hn_profiles.length; j++) { if (hn_profiles[j].id === target_id) { prof_idx = j; break; } }
   if (prof_idx === -1) return;
 
   var cred_idx = -1;
-  for (var k = 0; k < hn_creds.length; k++) { if (hn_creds[k].id === hn_user.id) { cred_idx = k; break; } }
+  for (var k = 0; k < hn_creds.length; k++) { if (hn_creds[k].id === target_id) { cred_idx = k; break; } }
 
   hn_profiles[prof_idx].name   = name;
   hn_profiles[prof_idx].handle = handle;
@@ -1639,8 +1644,11 @@ function hnSaveProfile() {
     else if (new_pw && new_pw.length > 0) return hnShowErr('hn-edit-err','La password deve essere di almeno 4 caratteri.');
   }
 
-  hn_user = hn_profiles[prof_idx];
-  sessionStorage.setItem('hn_user', JSON.stringify(hn_user));
+  // Update session only if editing own profile
+  if (hn_user && hn_user.id === target_id) {
+    hn_user = hn_profiles[prof_idx];
+    sessionStorage.setItem('hn_user', JSON.stringify(hn_user));
+  }
 
   var btn = document.querySelector('#hn-profcontent .hn-dbtn');
   if (btn) { btn.disabled = true; btn.textContent = '...'; }
@@ -1649,8 +1657,8 @@ function hnSaveProfile() {
   function onDone() {
     saved++;
     if (saved < 2) return;
-    hnSetLoggedIn();
-    hnOpenProfile(hn_user.id);
+    if (hn_user && hn_user.id === target_id) hnSetLoggedIn();
+    hnOpenProfile(target_id);
   }
   hnSaveProfile_fb(hn_profiles[prof_idx], onDone, function(){ hnShowErr('hn-edit-err','Errore nel salvataggio.'); });
   if (cred_idx !== -1) {
