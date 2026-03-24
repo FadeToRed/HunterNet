@@ -830,7 +830,8 @@ function hnLogout() {
   hnBellHide();
   var followTab = document.getElementById('hn-tab-following');
   if (followTab) followTab.style['display'] = 'none';
-  if (hn_tab_cur === 'following') { hn_tab_cur = 'all'; if (hn_data_ready) hnRenderFeed(); }
+  if (hn_tab_cur === 'following') { hn_tab_cur = 'all'; }
+  if (hn_data_ready) hnRenderFeed();
 }
 
 /* ── AVATAR PREVIEW ── */
