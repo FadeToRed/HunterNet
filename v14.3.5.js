@@ -375,41 +375,27 @@ function hnLinkPreviewFetch(url) {
   if (body_el) body_el.style['display'] = 'none';
   if (img_el) img_el.style['display'] = 'none';
 
-  // Use allorigins.win as CORS proxy to fetch page meta
-  var proxy = 'https://api.allorigins.win/get?url=' + encodeURIComponent(url);
-  fetch(proxy)
+  // Use jsonlink.io — dedicated link preview API
+  var api = 'https://jsonlink.io/api/extract?url=' + encodeURIComponent(url);
+  fetch(api)
     .then(function(r) { return r.json(); })
     .then(function(data) {
-      var html_str = data.contents || '';
-      var title_match = html_str.match(/<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i)
-        || html_str.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:title["']/i)
-        || html_str.match(/<title[^>]*>([^<]+)<\/title>/i);
-      var img_match = html_str.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i)
-        || html_str.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i);
-      var fetched_title = title_match ? title_match[1].trim() : '';
-      var fetched_img = img_match ? img_match[1].trim() : '';
       if (spinner) spinner.style['display'] = 'none';
-      if (fetched_title || fetched_img) {
-        if (body_el) body_el.style['display'] = 'block';
-        if (title_el) {
-          title_el.textContent = fetched_title;
-          // Auto-fill title input if empty
-          var title_inp = document.getElementById('hn-linktitle');
-          if (title_inp && !title_inp.value && fetched_title) {
-            title_inp.value = fetched_title;
-            hn_link_title = fetched_title;
-          }
+      var fetched_title = data.title || '';
+      var fetched_img = (data.images && data.images.length > 0) ? data.images[0] : '';
+      if (body_el) body_el.style['display'] = 'block';
+      if (title_el) {
+        title_el.textContent = fetched_title;
+        var title_inp = document.getElementById('hn-linktitle');
+        if (title_inp && !title_inp.value && fetched_title) {
+          title_inp.value = fetched_title;
+          hn_link_title = fetched_title;
         }
-        if (url_el) url_el.textContent = url;
-        if (fetched_img && img_el) {
-          img_el.src = fetched_img;
-          img_el.style['display'] = 'block';
-        }
-      } else {
-        // No OG data found — show just the URL
-        if (body_el) body_el.style['display'] = 'block';
-        if (title_el) title_el.textContent = '';
-        if (url_el) url_el.textContent = url;
+      }
+      if (url_el) url_el.textContent = url;
+      if (fetched_img && img_el) {
+        img_el.src = fetched_img;
+        img_el.style['display'] = 'block';
       }
     })
     .catch(function() {
