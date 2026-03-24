@@ -1448,6 +1448,7 @@ function hnOpenProfile(aid) {
       (sl[k].imgUrl?'<img src="'+hnEsc(sl[k].imgUrl)+'" style="max-width:100%;max-height:120px;border-radius:6px;margin-top:6px;object-fit:cover;display:block;" onerror="this.style.display=\'none\'">':'')+
       '<div style="font-size:11px;color:#5b6577;margin-top:4px;">'+hnAgo(sl[k].createdAt)+' \u00b7 '+(sl[k].likes||[]).length+' like</div></div>';
   var prof_following = prof.following || [];
+  var prof_following_existing = prof_following.filter(function(fid) { return hnProfileById(fid) !== null; });
   var following_html = '';
   for(var pfi=0;pfi<prof_following.length;pfi++){
     var pf2=null; for(var pp=0;pp<hn_profiles.length;pp++){if(hn_profiles[pp].id===prof_following[pfi]){pf2=hn_profiles[pp];break;}}
@@ -1484,12 +1485,12 @@ function hnOpenProfile(aid) {
     '<div class="hn-profstats">'+
     '<div class="hn-pstat"><span class="hn-pnum">'+up.length+'</span><span class="hn-plbl">Post</span></div>'+
     '<div class="hn-pstat"><span class="hn-pnum">'+tl+'</span><span class="hn-plbl">Like ricevuti</span></div>'+
-    '<div class="hn-pstat"><span class="hn-pnum">'+prof_following.length+'</span><span class="hn-plbl">Seguiti</span></div>'+
+    '<div class="hn-pstat"><span class="hn-pnum">'+prof_following_existing.length+'</span><span class="hn-plbl">Seguiti</span></div>'+
     '<div class="hn-pstat"><span class="hn-pnum">'+followers.length+'</span><span class="hn-plbl">Follower</span></div>'+
     '</div>'+
     '<div class="hn-prof-tabs">'+
     '<button class="hn-prof-tab hn-active" onclick="hnProfTab(\'posts\',this)">Post recenti</button>'+
-    '<button class="hn-prof-tab" onclick="hnProfTab(\'following\',this)">Seguiti ('+prof_following.length+')</button>'+
+    '<button class="hn-prof-tab" onclick="hnProfTab(\'following\',this)">Seguiti ('+prof_following_existing.length+')</button>'+
     '<button class="hn-prof-tab" onclick="hnProfTab(\'followers\',this)">Follower ('+followers.length+')</button>'+
     '</div>'+
     '<div id="hn-prof-scroll">'+
