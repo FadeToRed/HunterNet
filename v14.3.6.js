@@ -377,9 +377,11 @@ function hnLinkPreviewFetch(url) {
 
   // Use jsonlink.io — dedicated link preview API
   var api = 'https://jsonlink.io/api/extract?url=' + encodeURIComponent(url);
+  console.log('[preview] fetching:', api);
   fetch(api)
-    .then(function(r) { return r.json(); })
+    .then(function(r) { console.log('[preview] status:', r.status); return r.json(); })
     .then(function(data) {
+      console.log('[preview] data:', JSON.stringify(data));
       if (spinner) spinner.style['display'] = 'none';
       var fetched_title = data.title || '';
       var fetched_img = (data.images && data.images.length > 0) ? data.images[0] : '';
@@ -398,7 +400,8 @@ function hnLinkPreviewFetch(url) {
         img_el.style['display'] = 'block';
       }
     })
-    .catch(function() {
+    .catch(function(err) {
+      console.log('[preview] error:', err);
       if (spinner) spinner.style['display'] = 'none';
       if (body_el) body_el.style['display'] = 'block';
       if (title_el) title_el.textContent = '';
