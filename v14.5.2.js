@@ -355,6 +355,159 @@ function hnMarkNotifReadFb(to_id, nid) {
 
 
 
+/* ── COMMENT EDITOR MODAL ── */
+var hn_cedit_mode = null;
+var hn_cedit_pid  = null;
+var hn_cedit_ci   = null;
+var hn_cedit_emoji_open = false;
+
+function hnCEditOpen(mode, pid, ci, placeholder, title) {
+  hn_cedit_mode = mode;
+  hn_cedit_pid  = pid;
+  hn_cedit_ci   = (ci !== undefined && ci !== null) ? ci : null;
+  var overlay = document.getElementById('hn-cedit-overlay');
+  var ta      = document.getElementById('hn-cedit-textarea');
+  var titleEl = document.getElementById('hn-cedit-title');
+  var sendBtn = document.getElementById('hn-cedit-send');
+  if (titleEl) titleEl.textContent = title || 'Scrivi un commento';
+  if (ta) { ta.value = ''; ta.placeholder = placeholder || 'Scrivi...'; }
+  hnCEditClearImg();
+  hnCEditClearLink();
+  if (overlay) overlay.classList.add('hn-vis');
+  setTimeout(function(){ if (ta) ta.focus(); }, 100);
+  var ebtn = document.getElementById('hn-cedit-tbtn-emoji');
+  if (ebtn) ebtn.onclick = function(e) { e.stopPropagation(); hnCEditToggleEmoji(); };
+  var barbtn = document.getElementById('hn-cedit-tbtn-bar');
+  if (barbtn) barbtn.onclick = function() { hnCEditFmt('s'); };
+}
+
+function hnCEditClose() {
+  var overlay = document.getElementById('hn-cedit-overlay');
+  if (overlay) overlay.classList.remove('hn-vis');
+  hn_cedit_mode = null; hn_cedit_pid = null; hn_cedit_ci = null;
+  hnCEditClearImg(); hnCEditClearLink();
+  if (hn_cedit_emoji_open) {
+    var wrap = document.getElementById('hn-emoji-picker-wrap');
+    if (wrap) wrap.style['display'] = 'none';
+    hn_cedit_emoji_open = false;
+  }
+}
+
+function hnCEditFmt(tag) {
+  var ta = document.getElementById('hn-cedit-textarea');
+  if (!ta) return;
+  var s = ta.selectionStart, e = ta.selectionEnd;
+  var sel = ta.value.substring(s, e);
+  var open_tag = '['+tag+']', close_tag = '[/'+tag+']';
+  if (tag === 's') { open_tag = '[bar]'; close_tag = '[/bar]'; }
+  ta.value = ta.value.substring(0,s) + open_tag + sel + close_tag + ta.value.substring(e);
+  ta.selectionStart = s + open_tag.length;
+  ta.selectionEnd   = s + open_tag.length + sel.length;
+  ta.focus();
+}
+
+function hnCEditInsertEmoji(emoji) {
+  var ta = document.getElementById('hn-cedit-textarea');
+  if (!ta) return;
+  var s = ta.selectionStart, e = ta.selectionEnd;
+  ta.value = ta.value.substring(0,s) + emoji + ta.value.substring(e);
+  ta.selectionStart = ta.selectionEnd = s + emoji.length;
+  ta.focus();
+}
+
+function hnCEditToggleEmoji() {
+  var wrap = document.getElementById('hn-emoji-picker-wrap');
+  if (!wrap) return;
+  if (hn_cedit_emoji_open) {
+    wrap.style['display'] = 'none';
+    hn_cedit_emoji_open = false;
+    return;
+  }
+  var btn = document.getElementById('hn-cedit-tbtn-emoji');
+  if (btn) {
+    var rect = btn.getBoundingClientRect();
+    wrap.style['left'] = rect.left + 'px';
+    wrap.style['top']  = (rect.bottom + 6) + 'px';
+  }
+  if (!hn_emoji_picker_el) {
+    if (typeof EmojiMart === 'undefined') return;
+    hn_emoji_picker_el = new EmojiMart.Picker({
+      locale:'it', theme:'dark', set:'native',
+      onEmojiSelect: function(emoji) {
+        if (hn_cedit_emoji_open) hnCEditInsertEmoji(emoji.native);
+        else hnInsertEmoji(emoji.native);
+        wrap.style['display'] = 'none';
+        hn_emoji_picker_open = false;
+        hn_cedit_emoji_open = false;
+      },
+      onClickOutside: function() {
+        wrap.style['display'] = 'none';
+        hn_emoji_picker_open = false;
+        hn_cedit_emoji_open = false;
+      }
+    });
+    wrap.appendChild(hn_emoji_picker_el);
+  }
+  wrap.style['display'] = 'block';
+  hn_cedit_emoji_open = true;
+  hn_emoji_picker_open = false;
+}
+
+function hnCEditToggleImg() {
+  var row = document.getElementById('hn-cedit-imgrow');
+  if (!row) return;
+  if (row.classList.contains('hn-vis')) hnCEditClearImg();
+  else { row.classList.add('hn-vis'); var i=document.getElementById('hn-cedit-imgurl'); if(i)i.focus(); }
+}
+
+function hnCEditClearImg() {
+  var row = document.getElementById('hn-cedit-imgrow');
+  var inp = document.getElementById('hn-cedit-imgurl');
+  if (row) row.classList.remove('hn-vis');
+  if (inp) inp.value = '';
+}
+
+function hnCEditToggleLink() {
+  var row = document.getElementById('hn-cedit-linkrow');
+  if (!row) return;
+  if (row.classList.contains('hn-vis')) hnCEditClearLink();
+  else { row.classList.add('hn-vis'); var i=document.getElementById('hn-cedit-linkurl'); if(i)i.focus(); }
+}
+
+function hnCEditClearLink() {
+  var row = document.getElementById('hn-cedit-linkrow');
+  var url = document.getElementById('hn-cedit-linkurl');
+  var tit = document.getElementById('hn-cedit-linktitle');
+  if (row) row.classList.remove('hn-vis');
+  if (url) url.value = '';
+  if (tit) tit.value = '';
+}
+
+function hnCEditSubmit() {
+  var ta = document.getElementById('hn-cedit-textarea');
+  if (!ta) return;
+  var text = ta.value.trim();
+  if (!text) return;
+  var imgUrl    = document.getElementById('hn-cedit-imgurl') ? document.getElementById('hn-cedit-imgurl').value.trim() : '';
+  var linkUrl   = document.getElementById('hn-cedit-linkurl') ? document.getElementById('hn-cedit-linkurl').value.trim() : '';
+  var linkTitle = document.getElementById('hn-cedit-linktitle') ? document.getElementById('hn-cedit-linktitle').value.trim() : '';
+  var full_text = text;
+  if (imgUrl)  full_text += '\n[img]'  + imgUrl + '[/img]';
+  if (linkUrl) full_text += '\n[link url="' + linkUrl + '"' + (linkTitle ? ' title="'+linkTitle+'"' : '') + '][/link]';
+  var mode = hn_cedit_mode;
+  var pid  = hn_cedit_pid;
+  var ci   = hn_cedit_ci;
+  hnCEditClose();
+  if (mode === 'comment') {
+    var inp = document.getElementById('hn-ci-'+pid);
+    if (inp) { inp.value = full_text; hnSubmitComment(pid); }
+  } else if (mode === 'reply') {
+    var cid = pid + '_' + ci;
+    var inp2 = document.getElementById('hn-ri-'+cid);
+    if (inp2) { inp2.value = full_text; hnSubmitReply(pid, ci); }
+  }
+}
+
 /* ── LINK PREVIEW ── */
 var hn_link_preview_timer = null;
 
