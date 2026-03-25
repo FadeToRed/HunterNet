@@ -1261,22 +1261,27 @@ function hnRenderFeed() {
 }
 
 function hnAttachMentionListeners() {
+  // Event delegation — single listener on container handles all current and future elements
   var container = document.getElementById('hn-posts');
-  if (!container) return;
-  var triggers = container.querySelectorAll('[data-cedit]');
-  console.log('[cedit] triggers found:', triggers.length);
-  for (var i = 0; i < triggers.length; i++) {
-    (function(el) {
-      el.onclick = function() {
+  if (!container || container._cedit_listener) return;
+  container._cedit_listener = true;
+  container.addEventListener('click', function(e) {
+    var el = e.target;
+    // Walk up to find data-cedit element
+    while (el && el !== container) {
+      if (el.getAttribute && el.getAttribute('data-cedit')) {
         var mode = el.getAttribute('data-cedit');
         var pid  = el.getAttribute('data-pid');
         var ci   = el.getAttribute('data-ci');
         var title = mode === 'comment' ? 'Commenta' : 'Rispondi';
         var ph    = mode === 'comment' ? 'Scrivi un commento...' : 'Scrivi una risposta...';
-        hnCEditOpen(mode, pid, ci !== null ? parseInt(ci) : null, ph, title);
-      };
-    })(triggers[i]);
-  }
+        hnCEditOpen(mode, pid, ci !== null && ci !== '' ? parseInt(ci) : null, ph, title);
+        e.stopPropagation();
+        return;
+      }
+      el = el.parentNode;
+    }
+  });
 }
 function hnRenderPost(p) {
   var lc = p.likes ? p.likes.length : 0;
