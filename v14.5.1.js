@@ -1183,7 +1183,7 @@ function hnRenderPost(p) {
   }
   var cl = p.comments||[];
   var commHtml = hnRenderComments(cl, 3, p.id);
-  var cf = hn_user ? '<div class="hn-ccompose"><input type="text" placeholder="Rispondi..." id="hn-ci-'+p.id+'" oninput="hnMentionCheck(this);" onkeydown="hnMentionKey(event,this);if(event.key===\'Enter\')hnSubmitComment(\''+p.id+'\')" onblur="setTimeout(hnMentionHide,150);"><button class="hn-csend" onclick="hnSubmitComment(\''+p.id+'\')">Invia</button></div>' : '';
+  var cf = hn_user ? '<div class="hn-ccompose"><input type="text" placeholder="Rispondi..." id="hn-ci-'+p.id+'" readonly onclick="hnCEditOpen(\'comment\',\''+p.id+'\',null,\'Scrivi un commento...\',\'Commenta\')" style="cursor:pointer!important;"><button class="hn-csend" onclick="hnCEditOpen(\'comment\',\''+p.id+'\',null,\'Scrivi un commento...\',\'Commenta\')">Commenta</button></div>' : '';
   var shareBtn = hn_user ? '<button class="hn-abtn" onclick="hnOpenShare(\''+p.id+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>'+(p.shares||0)+'</button>' : '';
   var isOwner = hn_user && hn_user.id === p.authorId;
   var isAdmin = hnIsAdmin();
@@ -1284,7 +1284,7 @@ function hnShowMoreComments(pid, currentShown) {
   if (!cs) return;
   var newShown = currentShown + 3;
   var cl = post.comments || [];
-  var cf = hn_user ? '<div class="hn-ccompose"><input type="text" placeholder="Rispondi..." id="hn-ci-'+pid+'" onkeydown="if(event.key===\'Enter\')hnSubmitComment(\''+pid+'\')"><button class="hn-csend" onclick="hnSubmitComment(\''+pid+'\')">Invia</button></div>' : '';
+  var cf = hn_user ? '<div class="hn-ccompose"><input type="text" placeholder="Rispondi..." id="hn-ci-'+pid+'" readonly onclick="hnCEditOpen(\'comment\',\''+pid+'\',null,\'Scrivi un commento...\',\'Commenta\')" style="cursor:pointer!important;"><button class="hn-csend" onclick="hnCEditOpen(\'comment\',\''+pid+'\',null,\'Scrivi un commento...\',\'Commenta\')">Commenta</button></div>' : '';
   cs.innerHTML = hnRenderComments(cl, newShown, pid) + cf;
   cs.classList.add('hn-open');
   hnAttachMentionListeners();
