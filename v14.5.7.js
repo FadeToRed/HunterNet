@@ -2742,3 +2742,4 @@ setInterval(function() {
 setInterval(function() {
   hnCheckPollExpiry();
 }, 300000); // 5 minuti
+hnInit();
