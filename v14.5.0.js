@@ -1254,7 +1254,7 @@ function hnRenderComments(cl, shown, pid) {
       '<button class="hn-edit-btn" onclick="hnEditComment(\''+pid+'\','+ci+')">Modifica</button>'+
       '<button class="hn-del-btn" onclick="hnDeleteComment(\''+pid+'\','+ci+')">Elimina</button>' : '';
     var commentEditedLabel = c.edited ? '<span class="hn-edited">· modificato</span>' : '';
-    var replyForm = hn_user ? '<div class="hn-reply-compose"><input type="text" placeholder="Rispondi a '+hnEsc(c.authorName)+'..." id="hn-ri-'+cid+'" oninput="hnMentionCheck(this);" onkeydown="hnMentionKey(event,this);if(event.key===\'Enter\')hnSubmitReply(\''+pid+'\','+ci+')" onblur="setTimeout(hnMentionHide,150);"><button class="hn-rsend" onclick="hnSubmitReply(\''+pid+'\','+ci+')">Invia</button></div>' : '';
+    var replyForm = hn_user ? '<div class="hn-reply-compose"><input type="text" placeholder="Rispondi..." id="hn-ri-'+cid+'" readonly onfocus="hnCEditOpen(\'reply\',\''+pid+'\','+ci+',\'Rispondi...\',\'Rispondi\')" style="cursor:pointer!important;"><button class="hn-rsend" onclick="hnCEditOpen(\'reply\',\''+pid+'\','+ci+',\'Rispondi...\',\'Rispondi\')">Invia</button></div>' : '';
     var repliesBlock = '<div class="hn-replies" id="hn-rep-'+cid+'">'+repliesHtml+replyForm+'</div>';
     var replyCount = replies.length ? ' ('+replies.length+')' : '';
     html += '<div class="hn-citem" id="hn-cid-'+cid+'">'+hnAvHtml(c.authorColor,c.authorAvatar||'',c.authorName,'hn-cav',null)+
@@ -1727,6 +1727,11 @@ function hnCloseModal(id) {
   if(el) el.style.display='none';
 }
 document.addEventListener('click',function(e){
+  var cedit_overlay=document.getElementById('hn-cedit-overlay');
+  var cedit_box=document.getElementById('hn-cedit-box');
+  if(cedit_overlay&&cedit_overlay.classList.contains('hn-vis')&&cedit_box&&!cedit_box.contains(e.target)){
+    hnCEditClose();
+  }
   var epw=document.getElementById('hn-emoji-picker-wrap');
   var ebtn=document.getElementById('hn-tbtn-emoji');
   if(epw&&ebtn&&!epw.contains(e.target)&&e.target!==ebtn){
