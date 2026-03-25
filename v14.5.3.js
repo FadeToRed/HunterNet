@@ -1261,8 +1261,20 @@ function hnRenderFeed() {
 }
 
 function hnAttachMentionListeners() {
-  var inputs = document.getElementById('hn-posts').querySelectorAll('input[type=text]');
-  for (var i = 0; i < inputs.length; i++) {
+  var container = document.getElementById('hn-posts');
+  if (!container) return;
+  var triggers = container.querySelectorAll('[data-cedit]');
+  for (var i = 0; i < triggers.length; i++) {
+    (function(el) {
+      el.onclick = function() {
+        var mode = el.getAttribute('data-cedit');
+        var pid  = el.getAttribute('data-pid');
+        var ci   = el.getAttribute('data-ci');
+        var title = mode === 'comment' ? 'Commenta' : 'Rispondi';
+        var ph    = mode === 'comment' ? 'Scrivi un commento...' : 'Scrivi una risposta...';
+        hnCEditOpen(mode, pid, ci !== null ? parseInt(ci) : null, ph, title);
+      };
+    })(triggers[i]);
   }
 }
 function hnRenderPost(p) {
@@ -1336,7 +1348,7 @@ function hnRenderPost(p) {
   }
   var cl = p.comments||[];
   var commHtml = hnRenderComments(cl, 3, p.id);
-  var cf = hn_user ? '<div class="hn-ccompose"><input type="text" placeholder="Rispondi..." id="hn-ci-'+p.id+'" readonly onclick="hnCEditOpen(\'comment\',\''+p.id+'\',null,\'Scrivi un commento...\',\'Commenta\')" style="cursor:pointer!important;"><button class="hn-csend" onclick="hnCEditOpen(\'comment\',\''+p.id+'\',null,\'Scrivi un commento...\',\'Commenta\')">Commenta</button></div>' : '';
+  var cf = hn_user ? '<div class="hn-ccompose"><input type="text" placeholder="Rispondi..." id="hn-ci-'+p.id+'" readonly data-cedit="comment" data-pid="'+p.id+'" style="cursor:pointer!important;"><button class="hn-csend" data-cedit="comment" data-pid="'+p.id+'">Commenta</button></div>' : '';
   var shareBtn = hn_user ? '<button class="hn-abtn" onclick="hnOpenShare(\''+p.id+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>'+(p.shares||0)+'</button>' : '';
   var isOwner = hn_user && hn_user.id === p.authorId;
   var isAdmin = hnIsAdmin();
@@ -1407,7 +1419,7 @@ function hnRenderComments(cl, shown, pid) {
       '<button class="hn-edit-btn" onclick="hnEditComment(\''+pid+'\','+ci+')">Modifica</button>'+
       '<button class="hn-del-btn" onclick="hnDeleteComment(\''+pid+'\','+ci+')">Elimina</button>' : '';
     var commentEditedLabel = c.edited ? '<span class="hn-edited">· modificato</span>' : '';
-    var replyForm = hn_user ? '<div class="hn-reply-compose"><input type="text" placeholder="Rispondi..." id="hn-ri-'+cid+'" readonly onfocus="hnCEditOpen(\'reply\',\''+pid+'\','+ci+',\'Rispondi...\',\'Rispondi\')" style="cursor:pointer!important;"><button class="hn-rsend" onclick="hnCEditOpen(\'reply\',\''+pid+'\','+ci+',\'Rispondi...\',\'Rispondi\')">Invia</button></div>' : '';
+    var replyForm = hn_user ? '<div class="hn-reply-compose"><input type="text" placeholder="Rispondi..." id="hn-ri-'+cid+'" readonly data-cedit="reply" data-pid="'+pid+'" data-ci="'+ci+'" style="cursor:pointer!important;"><button class="hn-rsend" data-cedit="reply" data-pid="'+pid+'" data-ci="'+ci+'">Invia</button></div>' : '';
     var repliesBlock = '<div class="hn-replies" id="hn-rep-'+cid+'">'+repliesHtml+replyForm+'</div>';
     var replyCount = replies.length ? ' ('+replies.length+')' : '';
     html += '<div class="hn-citem" id="hn-cid-'+cid+'">'+hnAvHtml(c.authorColor,c.authorAvatar||'',c.authorName,'hn-cav',null)+
@@ -1437,7 +1449,7 @@ function hnShowMoreComments(pid, currentShown) {
   if (!cs) return;
   var newShown = currentShown + 3;
   var cl = post.comments || [];
-  var cf = hn_user ? '<div class="hn-ccompose"><input type="text" placeholder="Rispondi..." id="hn-ci-'+pid+'" readonly onclick="hnCEditOpen(\'comment\',\''+pid+'\',null,\'Scrivi un commento...\',\'Commenta\')" style="cursor:pointer!important;"><button class="hn-csend" onclick="hnCEditOpen(\'comment\',\''+pid+'\',null,\'Scrivi un commento...\',\'Commenta\')">Commenta</button></div>' : '';
+  var cf = hn_user ? '<div class="hn-ccompose"><input type="text" placeholder="Rispondi..." id="hn-ci-'+pid+'" readonly data-cedit="comment" data-pid="'+pid+'" style="cursor:pointer!important;"><button class="hn-csend" data-cedit="comment" data-pid="'+pid+'">Commenta</button></div>' : '';
   cs.innerHTML = hnRenderComments(cl, newShown, pid) + cf;
   cs.classList.add('hn-open');
   hnAttachMentionListeners();
