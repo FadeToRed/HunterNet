@@ -491,20 +491,14 @@ function hnCEditSubmit() {
   var imgUrl    = document.getElementById('hn-cedit-imgurl') ? document.getElementById('hn-cedit-imgurl').value.trim() : '';
   var linkUrl   = document.getElementById('hn-cedit-linkurl') ? document.getElementById('hn-cedit-linkurl').value.trim() : '';
   var linkTitle = document.getElementById('hn-cedit-linktitle') ? document.getElementById('hn-cedit-linktitle').value.trim() : '';
-  var full_text = text;
-  if (imgUrl)  full_text += '\n[img]'  + imgUrl + '[/img]';
-  if (linkUrl) full_text += '\n[link url="' + linkUrl + '"' + (linkTitle ? ' title="'+linkTitle+'"' : '') + '][/link]';
   var mode = hn_cedit_mode;
   var pid  = hn_cedit_pid;
   var ci   = hn_cedit_ci;
   hnCEditClose();
   if (mode === 'comment') {
-    var inp = document.getElementById('hn-ci-'+pid);
-    if (inp) { inp.value = full_text; hnSubmitComment(pid); }
+    hnSubmitCommentFull(pid, text, imgUrl, linkUrl, linkTitle);
   } else if (mode === 'reply') {
-    var cid = pid + '_' + ci;
-    var inp2 = document.getElementById('hn-ri-'+cid);
-    if (inp2) { inp2.value = full_text; hnSubmitReply(pid, ci); }
+    hnSubmitReplyFull(pid, ci, text, imgUrl, linkUrl, linkTitle);
   }
 }
 
@@ -1055,6 +1049,24 @@ function hnFormatText(text) {
   return t;
 }
 
+function hnRenderCommentMedia(item) {
+  var html = '';
+  if (item.imgUrl) {
+    var yt = item.imgUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+    if (yt) {
+      html += '<div style="position:relative!important;padding-bottom:56.25%!important;height:0!important;margin-top:5px!important;border-radius:6px!important;overflow:hidden!important;"><iframe src="https://www.youtube.com/embed/'+yt[1]+'" style="position:absolute!important;top:0!important;left:0!important;width:100%!important;height:100%!important;border:none!important;" allowfullscreen></iframe></div>';
+    } else {
+      html += '<img src="'+hnEsc(item.imgUrl)+'" style="max-width:100%!important;max-height:200px!important;border-radius:6px!important;margin-top:5px!important;display:block!important;cursor:pointer!important;" onclick="hnOpenLightbox(this.src)" onerror="this.hidden=true">';
+    }
+  }
+  if (item.linkUrl) {
+    html += '<a href="'+hnEsc(item.linkUrl)+'" target="_blank" rel="noopener" style="display:block!important;text-decoration:none!important;border:1px solid #313846!important;border-radius:6px!important;padding:6px 10px!important;margin-top:5px!important;background:#1e2128!important;font-size:12px!important;">'+
+      (item.linkTitle ? '<div style="color:#e2e8f0!important;font-weight:500!important;margin-bottom:2px!important;">'+hnEsc(item.linkTitle)+'</div>' : '')+
+      '<div style="color:#5b9cf6!important;word-break:break-all!important;">'+hnEsc(item.linkUrl)+'</div></a>';
+  }
+  return html;
+}
+
 function hnBBReplace(t, tag, cls) {
   var open = '[' + tag + ']';
   var close = '[/' + tag + ']';
@@ -1418,7 +1430,7 @@ function hnRenderComments(cl, shown, pid) {
       var replyEditedLabel = r.edited ? '<span class="hn-edited">· modificato</span>' : '';
       repliesHtml += '<div class="hn-ritem" id="hn-rid-'+rid+'">'+hnAvHtml(r.authorColor,r.authorAvatar||'',r.authorName,'hn-rav',null)+
         '<div class="hn-rbody"><div class="hn-rmeta"><span class="hn-rname" style="cursor:pointer!important;" onclick="hnOpenProfileByHandle(\''+hnEsc(r.authorHandle)+'\')">'+(r.authorHandle?hnEsc(r.authorName)+hnVerifiedBadge(hnProfileById(r.authorId)):hnEsc(r.authorName))+'</span><span class="hn-rtime">'+hnAgo(r.createdAt)+'</span>'+replyEditedLabel+'</div>'+
-        '<div class="hn-rtext" id="hn-rt-'+rid+'">'+hnMentionify(hnEsc(r.text))+'</div>'+replyOwnerHtml+'</div></div>';
+        '<div class="hn-rtext" id="hn-rt-'+rid+'">'+hnMentionify(hnFormatText(r.text))+'</div>'+hnRenderCommentMedia(r)+replyOwnerHtml+'</div></div>';
     }
     var isCommentOwner = (hn_user && hn_user.id === c.authorId) || hnIsAdmin();
     var commentOwnerHtml = isCommentOwner ?
@@ -1431,7 +1443,7 @@ function hnRenderComments(cl, shown, pid) {
     html += '<div class="hn-citem" id="hn-cid-'+cid+'">'+hnAvHtml(c.authorColor,c.authorAvatar||'',c.authorName,'hn-cav',null)+
       '<div class="hn-cbody">'+
       '<div class="hn-cmeta"><span class="hn-cname" style="cursor:pointer!important;" onclick="hnOpenProfileByHandle(\''+hnEsc(c.authorHandle)+'\')">'+(c.authorHandle?hnEsc(c.authorName)+hnVerifiedBadge(hnProfileById(c.authorId)):hnEsc(c.authorName))+'</span><span class="hn-ctime">'+hnAgo(c.createdAt)+'</span>'+commentEditedLabel+'</div>'+
-      '<div class="hn-ctext" id="hn-ct-'+cid+'">'+hnMentionify(hnEsc(c.text))+'</div>'+
+      '<div class="hn-ctext" id="hn-ct-'+cid+'">'+hnMentionify(hnFormatText(c.text))+'</div>'+hnRenderCommentMedia(c)+
       '<div class="hn-cactions-row">'+
       (hn_user ? '<button class="hn-cabtn" onclick="hnToggleReplies(\''+cid+'\')">Rispondi'+replyCount+'</button>' : '')+
       commentOwnerHtml+
@@ -1900,7 +1912,8 @@ function hnCloseModal(id) {
 document.addEventListener('click',function(e){
   var cedit_overlay=document.getElementById('hn-cedit-overlay');
   var cedit_box=document.getElementById('hn-cedit-box');
-  if(cedit_overlay&&cedit_overlay.classList.contains('hn-vis')&&cedit_box&&!cedit_box.contains(e.target)){
+  var emoji_wrap=document.getElementById('hn-emoji-picker-wrap');
+  if(cedit_overlay&&cedit_overlay.classList.contains('hn-vis')&&cedit_box&&!cedit_box.contains(e.target)&&!(emoji_wrap&&emoji_wrap.contains(e.target))){
     hnCEditClose();
   }
   var epw=document.getElementById('hn-emoji-picker-wrap');
@@ -2637,7 +2650,64 @@ function hnSubmitReply(pid, commentIndex) {
   );
 }
 
-hnInit();
+function hnSubmitCommentFull(pid, text, imgUrl, linkUrl, linkTitle) {
+  if (!hn_user) { hnOpenModal('auth'); return; }
+  var post=null; for (var i=0;i<hn_posts.length;i++) { if(hn_posts[i].id===pid){post=hn_posts[i];break;} }
+  if (!post) {
+    hn_fb_get('hunternet/posts/'+pid, function(d) {
+      if (d) { hn_posts.push(d); hnSubmitCommentFull(pid, text, imgUrl, linkUrl, linkTitle); }
+    }, function(){});
+    return;
+  }
+  if (!post.comments) post.comments=[];
+  var cmt={id:String(Date.now()),authorId:hn_user.id,authorName:hn_user.name,
+    authorHandle:hn_user.handle,authorColor:hn_user.color,authorAvatar:hn_user.avatar||'',
+    text:text, imgUrl:imgUrl||'', linkUrl:linkUrl||'', linkTitle:linkTitle||'',
+    createdAt:new Date().toISOString()};
+  post.comments.push(cmt);
+  hnSavePost_fb(post,
+    function(){
+      setTimeout(function(){var cs=document.getElementById('hn-cs-'+pid);if(cs)cs.classList.add('hn-open');},300);
+      if (post.authorId !== hn_user.id) hnCreateNotif(post.authorId,'comment',post.id,post.text);
+      hnNotifMentions(text,post.id,post.text); hnNotifGroupTags(text,post.id,post.text);
+    },
+    function(){ post.comments.pop(); alert('Errore commento.'); }
+  );
+}
+
+function hnSubmitReplyFull(pid, commentIndex, text, imgUrl, linkUrl, linkTitle) {
+  if (!hn_user) { hnOpenModal('auth'); return; }
+  var post = null;
+  for (var i = 0; i < hn_posts.length; i++) { if (hn_posts[i].id === pid) { post = hn_posts[i]; break; } }
+  if (!post || !post.comments || !post.comments[commentIndex]) return;
+  var comment = post.comments[commentIndex];
+  if (!comment.replies) comment.replies = [];
+  var reply = {
+    id: String(Date.now()),
+    authorId: hn_user.id, authorName: hn_user.name,
+    authorHandle: hn_user.handle, authorColor: hn_user.color,
+    authorAvatar: hn_user.avatar || '',
+    text: text, imgUrl: imgUrl||'', linkUrl: linkUrl||'', linkTitle: linkTitle||'',
+    createdAt: new Date().toISOString()
+  };
+  comment.replies.push(reply);
+  var cid = pid + '_' + commentIndex;
+  hnSavePost_fb(hnGetPostById(pid),
+    function() {
+      hnNotifMentions(text, pid, text); hnNotifGroupTags(text, pid, text);
+      if (comment.authorId !== hn_user.id) hnCreateNotif(comment.authorId, 'comment', pid, text);
+      setTimeout(function() {
+        var cs = document.getElementById('hn-cs-'+pid);
+        if (cs) cs.classList.add('hn-open');
+        var rep = document.getElementById('hn-rep-'+cid);
+        if (rep) rep.classList.add('hn-open');
+      }, 300);
+    },
+    function() { comment.replies.pop(); alert('Errore nel salvataggio della risposta.'); }
+  );
+}
+
+
 function hnUpdatePresence() {
   if (!hn_user) return;
   var now = new Date().toISOString();
