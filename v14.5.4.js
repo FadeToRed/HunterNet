@@ -1264,6 +1264,7 @@ function hnAttachMentionListeners() {
   var container = document.getElementById('hn-posts');
   if (!container) return;
   var triggers = container.querySelectorAll('[data-cedit]');
+  console.log('[cedit] triggers found:', triggers.length);
   for (var i = 0; i < triggers.length; i++) {
     (function(el) {
       el.onclick = function() {
