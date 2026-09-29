@@ -1735,7 +1735,7 @@ function hnOpenProfile(aid) {
     (prof.bio?'<p class="hn-profbio">'+hnEsc(prof.bio)+'</p>':'')+
     '<div class="hn-profstats">'+
     '<div class="hn-pstat"><span class="hn-pnum">'+up.length+'</span><span class="hn-plbl">Post</span></div>'+
-    '<div class="hn-pstat"><span class="hn-pnum">'+tl+'</span><span class="hn-plbl">Like ricevuti</span></div>'+
+    '<div class="hn-pstat"><span class="hn-pnum" title="'+(tl*HN_LIKE_MULT).toLocaleString('it-IT')+'">'+hnFmtCount(tl*HN_LIKE_MULT)+'</span><span class="hn-plbl">Like ricevuti</span></div>'+
     '<div class="hn-pstat"><span class="hn-pnum">'+prof_following_existing.length+'</span><span class="hn-plbl">Seguiti</span></div>'+
     '<div class="hn-pstat"><span class="hn-pnum" title="'+(followers.length*HN_FOLLOWER_MULT).toLocaleString('it-IT')+'">'+hnFmtCount(followers.length*HN_FOLLOWER_MULT)+'</span><span class="hn-plbl">Follower</span></div>'+
     '</div>'+
@@ -2805,6 +2805,7 @@ function hnIsOnline(prof) {
 
 /* Follower fittizi: ogni follower reale vale HN_FOLLOWER_MULT */
 var HN_FOLLOWER_MULT = 10000;
+var HN_LIKE_MULT = 3756; /* solo per il totale "Like ricevuti" nel profilo */
 function hnFmtCount(n) {
   if (n >= 1000000) return String(parseFloat((n/1000000).toFixed(1))).replace('.', ',') + 'M';
   if (n >= 1000)    return String(parseFloat((n/1000).toFixed(1))).replace('.', ',') + 'K';
